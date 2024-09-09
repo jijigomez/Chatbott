@@ -5,7 +5,7 @@ from .models import Appointment  # Import your model
 pairs = [
     [
         r"my name is (.*)",
-        ["Hello %1, How can I help you today?",]
+        ["Hello %1,Please provide Email ",]
     ],
     [
         r"I want to book an appointment",
