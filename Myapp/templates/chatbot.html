@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+        .chat-container {
+            width: 80%;
+            max-width: 600px;
+            margin: 50px auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .chatbox {
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .user-message {
+            background-color: #e1ffc7;
+            text-align: right;
+        }
+        .bot-message {
+            background-color: #f1f1f1;
+        }
+        .input-area {
+            display: flex;
+            margin-top: 10px;
+        }
+        .input-area input, .input-area button {
+            margin-right: 5px;
+        }
+        .input-area input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .input-area button {
+            padding: 10px 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #4CAF50;
+            color: #fff;
+            cursor: pointer;
+        }
+        .input-area button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <h1>Chatbot</h1>
+        <div class="chatbox" id="chatbox"></div>
+        <div class="input-area">
+            <input type="text" id="message" placeholder="Type your message here">
+            <input type="text" id="specialization" placeholder="Specialization" style="display:none;">
+            <input type="date" id="date" style="display:none;">
+            <input type="text" id="contact_number" placeholder="Contact Number" style="display:none;">
+            <input type="email" id="email" placeholder="Email" style="display:none;">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        function addMessageToChatbox(text, isBot) {
+            const chatbox = document.getElementById('chatbox');
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message');
+            messageDiv.classList.add(isBot ? 'bot-message' : 'user-message');
+            messageDiv.innerText = text;
+            chatbox.appendChild(messageDiv);
+            chatbox.scrollTop = chatbox.scrollHeight;  // Auto-scroll to the latest message
+        }
+
+        function sendMessage() {
+            const message = document.getElementById('message').value;
+            const specialization = document.getElementById('specialization').value;
+            const date = document.getElementById('date').value;
+            const contactNumber = document.getElementById('contact_number').value;
+            const email = document.getElementById('email').value;
+
+            if (message.trim() === '') return;
+
+            // Display user message
+            addMessageToChatbox(message, false);
+
+            // Send data to server
+            const xhr = new XMLHttpRequest();
+            xhr.open("POST", "{% url 'chatbot_view' %}", true);
+            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+            xhr.setRequestHeader('X-CSRFToken', '{{ csrf_token }}');
+
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    addMessageToChatbox(response.response, true);
+
+                    // Update input visibility based on the response
+                    const responseText = response.response.toLowerCase();
+                    if (responseText.includes('specialization')) {
+                        document.getElementById('specialization').style.display = 'block';
+                    } else if (responseText.includes('schedule your appointment')) {
+                        document.getElementById('date').style.display = 'block';
+                    } else if (responseText.includes('contact number')) {
+                        document.getElementById('contact_number').style.display = 'block';
+                    } else if (responseText.includes('email')) {
+                        document.getElementById('email').style.display = 'block';
+                    } else {
+                        // Hide all inputs when done
+                        document.getElementById('specialization').style.display = 'none';
+                        document.getElementById('date').style.display = 'none';
+                        document.getElementById('contact_number').style.display = 'none';
+                        document.getElementById('email').style.display = 'none';
+                    }
+                }
+            };
+
+            xhr.send(
+                "message=" + encodeURIComponent(message) +
+                "&specialization=" + encodeURIComponent(specialization) +
+                "&date=" + encodeURIComponent(date) +
+                "&contact_number=" + encodeURIComponent(contactNumber) +
+                "&email=" + encodeURIComponent(email)
+            );
+
+            // Clear the message input field
+            document.getElementById('message').value = '';
+        }
+    </script>
+</body>
+</html>
